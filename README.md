@@ -14,6 +14,13 @@ pip3 install -r requirements.txt
 
 ## Usage:
 ```
-python3 translate.py "<search_terms>"
+python3 translate.py "<search_terms>" [<en_to_de>]
+```
+E.G.:
+```
+$ python3 translate.py "ausprobieren"
+20 matches - first 3: test sth. - check out sth. - check sth. out
+$ python3 translate.py "test" 1
+49 matches - first 3: etw. ausprobieren - etw. prüfen - jdn. etw. untersuchen
 ```
 
