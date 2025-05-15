@@ -1,23 +1,72 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+from datetime import datetime
 from dictcc import Dict
 from itertools import filterfalse
+import json
 from pathlib import Path
+from searchedword import SearchedWord
+from typing import List
+
+TXT_FILE = 'searched_words.txt'
+JSON_FILE = 'searched_words.json'
 
 
 def translate(word, matches_to_show, from_english=False):
     result = _fetch_result(word, from_english)
+
+    if from_english:
+        lang = "en"
+    else:
+        lang = "de"
+    
     if result.n_results == 0:
         print(f'no results found for "{word}"')
         return
 
     basic_translations = list(filterfalse(lambda tup: '[' in tup[1], result.translation_tuples))
     first_matches = ' - '.join([translation[1] for translation in basic_translations[:matches_to_show]])
-    with open('searched_words.txt', 'a') as searched_words:
+    with open(TXT_FILE, 'a') as searched_words:
         searched_words.write(f"{word}: {first_matches}\n")
+
+    update_or_add_word(word, first_matches, lang)
+
     print(f'{result.n_results} matches - first {matches_to_show}: {first_matches}')
 
+def load_words(filename: str) -> List[SearchedWord]:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return [SearchedWord.from_json(item) for item in data]
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_words(words: List[SearchedWord], filename: str):
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump([word.to_json() for word in words], f, indent=2)
+
+def update_or_add_word(new_word: str, definition: str, lang: str):
+    words = load_words(JSON_FILE)
+    now = datetime.now()
+
+    for word in words:
+        if word.word == new_word and word.lang == lang:
+            word.times_searched += 1
+            word.last_searched = now
+            break
+    else:
+        searched_word = SearchedWord(
+            word=new_word,
+            definition=definition,
+            lang=lang,
+            first_searched=now,
+            last_searched=now,
+            times_searched=1
+        )
+        words.append(searched_word)
+
+    save_words(words, JSON_FILE)
 
 def _fetch_result(word, from_english):
     translator = Dict()

@@ -1,2 +1,4 @@
 searched_words.txt
+searched_words.json
 
+__pycache__/
