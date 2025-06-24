@@ -26,7 +26,9 @@ def translate(word, matches_to_show, from_english=False):
         print(f'no results found for "{word}"')
         return
 
-    first_matches = _get_first_matches(matches_to_show, result.translation_tuples)
+    first_matches = " - ".join(
+        _get_first_matches(matches_to_show, result.translation_tuples)
+    )
 
     with open(TXT_FILE, "a") as searched_words:
         searched_words.write(f"{word}: {first_matches}\n")
@@ -81,35 +83,35 @@ def _fetch_result(word, from_english):
         return translator.translate(word, from_language="de", to_language="en")
 
 
-def _get_first_matches(matches_to_show, translation_tuples):
-    basic_translations = _remove_translations_with_square_brackets(
-        translation_tuples
-    )
+def _get_first_matches(
+    matches_to_show: int, translation_tuples: List[tuple[str, str]]
+) -> List[str]:
+    basic_translations = _remove_translations_with_square_brackets(translation_tuples)
     # If all translations were filtered out, we still want to show the first few matches
     if not basic_translations:
         basic_translations = _remove_text_in_square_brackets_from_translation(
             translation_tuples
         )
-    first_matches = " - ".join(
-        [translation[1] for translation in basic_translations[:matches_to_show]]
-    )
+    first_matches = [
+        translation[1] for translation in basic_translations[:matches_to_show]
+    ]
     return first_matches
 
 
-def _remove_translations_with_square_brackets(translation_tuples):
+def _remove_translations_with_square_brackets(
+    translation_tuples: List[tuple[str, str]],
+) -> List[tuple[str, str]]:
     """
     Remove translations that contain square brackets, as these examples are usually not useful for quick translations.
-    :param translation_tuples: list[tuple[str, str]]
-    :return: list[tuple[str, str]]
     """
     return list(filterfalse(lambda tup: "[" in tup[1], translation_tuples))
 
 
-def _remove_text_in_square_brackets_from_translation(translation_tuples):
+def _remove_text_in_square_brackets_from_translation(
+    translation_tuples: List[tuple[str, str]],
+) -> List[tuple[str, str]]:
     """
     Remove text in square brackets from translations, as they are often not relevant for quick translations.
-    :param translation_tuples: list[tuple[str, str]]
-    :return: list[tuple[str, str]]
     """
     return list(
         map(lambda tup: (tup[0], sub(r"\[.*]", "", tup[1]).strip()), translation_tuples)
